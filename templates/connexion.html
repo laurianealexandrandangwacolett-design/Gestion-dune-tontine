@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titre %}Connexion : {{ association }}{% endblock %}
+
+{% block contenu %}
+<section class="connexion">
+    <div class="connexion-visuel">
+        <p class="surtitre">Espace membres</p>
+        <h1>Retrouvez votre tontine</h1>
+        <ul class="avantages">
+            <li>Vos cotisations et vos retards, toujours à jour</li>
+            <li>Votre date de bénéfice et la cagnotte attendue</li>
+            <li>Vos pénalités, en toute transparence</li>
+        </ul>
+    </div>
+
+    <div class="carte-connexion">
+        <h2>Connexion</h2>
+        <p>Membres : votre numéro de téléphone et votre code d'accès.</p>
+
+        <form method="post" id="form-connexion" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if suivant %}<input type="hidden" name="suivant" value="{{ suivant }}">{% endif %}
+
+            <label for="identifiant">Téléphone ou login</label>
+            <input id="identifiant" name="identifiant" type="text" value="{{ identifiant }}"
+                   autocomplete="username" required>
+
+            <label for="mot_de_passe">Mot de passe</label>
+            <div class="champ-mdp">
+                <input id="mot_de_passe" name="mot_de_passe" type="password"
+                       autocomplete="current-password" required>
+                <button type="button" id="voir-mdp" class="btn-oeil" aria-label="Afficher le mot de passe">Afficher</button>
+                        <p class="petit">Pas encore membre ? <a href="{{ url_for('rejoindre') }}">Demander à rejoindre la tontine</a>.</p>
+            </div>
+
+            <p id="erreur" class="erreur-form" role="alert"></p>
+            <button type="submit" class="btn">Se connecter</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

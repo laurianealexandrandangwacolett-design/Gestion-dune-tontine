@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block titre %}Séances : {{ association }}{% endblock %}
+
+{% block contenu %}
+{% include "admin/_nav.html" %}
+<h1>Séances et bénéficiaires</h1>
+<p class="lead">Chaque membre bénéficie <strong>une seule fois</strong> par cycle.</p>
+
+{% if peut_gerer and nb_sans_benef > 0 and nb_sans_tour > 0 %}
+<section class="carte">
+    <h2>Tirage au sort</h2>
+    <p>{{ nb_sans_benef }} séance(s) sans bénéficiaire et {{ nb_sans_tour }} membre(s) qui n'ont pas encore leur tour.</p>
+    <form method="post" action="{{ url_for('tirage_au_sort', id_cycle=etat.cycle.id) }}"
+          data-confirmer="Lancer le tirage au sort pour les séances sans bénéficiaire ?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn">Tirer au sort les bénéficiaires manquants</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="carte">
+    <div class="table-wrap">
+        <table>
+            <caption>{{ etat.seances|length }} séances du {{ etat.cycle.nom }}</caption>
+            <thead><tr><th>N°</th><th>Date</th><th>État</th><th>Bénéficiaire</th><th>Collecté</th><th>Cotisations</th></tr></thead>
+            <tbody>
+                {% for s in etat.seances %}
+                <tr>
+                    <td>{{ s.numero }}</td>
+                    <td>{{ s.date|date_fr }}</td>
+                    <td>
+                        {% if s.statut == 'prochaine' %}<span class="badge or">Prochaine</span>
+                        {% elif s.passee %}<span class="badge ok">Passée</span>
+                        {% else %}<span class="badge neutre">À venir</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if peut_gerer %}
+                        <form method="post" action="{{ url_for('designer_beneficiaire', id_seance=s.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <label class="cache" for="benef-{{ s.id }}">Bénéficiaire de la séance {{ s.numero }}</label>
+                            <select id="benef-{{ s.id }}" name="beneficiaire">
+                                <option value="">— Aucun —</option>
+                                {% for m in etat.membres %}
+                                {% if m.id not in etat.deja_beneficiaires or m.id == s.beneficiaire_id %}
+                                <option value="{{ m.id }}" {% if m.id == s.beneficiaire_id %}selected{% endif %}>{{ m.nom }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-vert">Valider</button>
+                        </form>
+                        {% else %}
+                        {{ s.beneficiaire_nom or '—' }}
+                        {% endif %}
+                    </td>
+                    <td>{{ s.collecte|fcfa }} <span class="petit">({{ s.nb_payes }}/{{ s.nb_attendus }})</span></td>
+                    <td><a class="btn btn-sm btn-clair" href="{{ url_for('cotisations_seance', id_seance=s.id) }}">Ouvrir</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

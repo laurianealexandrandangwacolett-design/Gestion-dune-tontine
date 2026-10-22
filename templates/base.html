@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Gestion transparente d'une tontine : cotisations, séances, bénéficiaires et pénalités.">
+    <meta name="theme-color" content="#0F5C46">
+    <title>{% block titre %}{{ association }}{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+    <a class="saut" href="#contenu">Aller au contenu</a>
+    {% set ep = request.endpoint %}
+
+    <header class="entete">
+        <a class="marque" href="{{ url_for('accueil') }}">
+            <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo de la tontine" width="40" height="40">
+            <span>{{ association }}</span>
+        </a>
+
+        <button type="button" id="bouton-menu" aria-label="Ouvrir le menu"
+                aria-expanded="false" aria-controls="menu-principal">
+            <span></span><span></span><span></span>
+        </button>
+
+        <nav id="menu-principal" aria-label="Navigation principale">
+            <ul>
+                <li><a href="{{ url_for('accueil') }}" {% if ep == 'accueil' %}aria-current="page"{% endif %}>Accueil</a></li>
+                <li><a href="{{ url_for('calendrier') }}" {% if ep == 'calendrier' %}aria-current="page"{% endif %}>Calendrier</a></li>
+                {% if utilisateur %}
+                    {% if utilisateur.type == 'membre' %}
+                    <li><a href="{{ url_for('mon_espace') }}" {% if ep == 'mon_espace' %}aria-current="page"{% endif %}>Mon espace</a></li>
+                    {% endif %}
+                    {% if peut_consulter %}
+                    <li><a href="{{ url_for('tableau_bord') }}"
+                           {% if ep in ('tableau_bord', 'admin_seances', 'cotisations_seance', 'admin_penalites', 'admin_membres', 'historique') %}aria-current="page"{% endif %}>Administration</a></li>
+                    {% endif %}
+                    <li>
+                        <form method="post" action="{{ url_for('deconnexion') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit">Déconnexion ({{ utilisateur.nom }})</button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li><a href="{{ url_for('connexion') }}" {% if ep == 'connexion' %}aria-current="page"{% endif %}>Se connecter</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <main id="contenu">
+        {% for categorie, message in get_flashed_messages(with_categories=true) %}
+            <p class="flash {{ categorie }}" role="status">{{ message }}</p>
+        {% endfor %}
+
+        {% block contenu %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>{{ association }} · Projet 9, Groupe 09</p>
+        <p class="petit-pied">Technologies Web et applications · HTML, CSS, JavaScript, Flask, SQLite</p>
+    </footer>
+</body>
+</html>

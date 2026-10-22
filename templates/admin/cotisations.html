@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "macros.html" import avatar %}
+{% block titre %}Séance n°{{ seance.numero }} : {{ association }}{% endblock %}
+
+{% block contenu %}
+{% include "admin/_nav.html" %}
+<h1>Séance n° {{ seance.numero }}</h1>
+<p class="lead">{{ seance.date|date_fr(true) }} · Bénéficiaire :
+    <strong>{{ seance.beneficiaire_nom or 'pas encore désigné' }}</strong></p>
+
+<section class="carte" id="resume-seance" data-seance="{{ seance.id }}">
+    <div class="resume-grille">
+        <div><p class="etiquette">Collecté</p><p class="valeur" id="r-collecte">{{ seance.collecte|fcfa }}</p></div>
+        <div><p class="etiquette">Attendu</p><p class="valeur">{{ seance.attendu|fcfa }}</p></div>
+        <div><p class="etiquette">Reste à collecter</p><p class="valeur" id="r-reste">{{ (seance.attendu - seance.collecte)|fcfa }}</p></div>
+        <div><p class="etiquette" id="r-label-non">{{ 'Retardataires' if seance.passee else 'Pas encore payé' }}</p>
+             <p class="valeur" id="r-non">{{ seance.nb_attendus - seance.nb_payes }}</p></div>
+    </div>
+    <div class="barre" role="img" aria-label="Avancement de la collecte"><span id="r-barre" style="width: {{ seance.taux }}%"></span></div>
+</section>
+
+<section class="carte">
+    <h2>Cotisations de {{ etat.montant|fcfa }} par membre</h2>
+
+    {% if peut_gerer %}
+    <form method="post" id="form-cotisations" data-seance="{{ seance.id }}"
+          data-montant="{{ etat.montant }}" data-passee="{{ 1 if seance.passee else 0 }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-ligne">
+            <div>
+                <label for="date_paiement">Date de paiement</label>
+                <input id="date_paiement" name="date_paiement" type="date" value="{{ aujourdhui }}" max="{{ aujourdhui }}" required>
+                            <div><button type="button" id="tout-cocher" class="btn btn-sm btn-clair">Cocher tous les non-payés</button></div>
+            </div>
+        </div>
+    {% endif %}
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Membre</th><th>État</th>{% if peut_gerer %}<th>Cotise ?</th>{% endif %}<th>Mode</th>{% if peut_gerer %}<th>Action</th>{% endif %}</tr>
+                </thead>
+                <tbody>
+                    {% for l in lignes %}
+                    <tr>
+                        <td>{{ avatar(l.membre.nom) }} {{ l.membre.nom }}</td>
+                        {% if l.cotisation %}
+                        <td><span class="badge ok">Payé</span> le {{ l.cotisation.date_paiement|date_fr }}</td>
+                        {% if peut_gerer %}<td>—</td>{% endif %}
+                        <td>{{ MODES[l.cotisation.mode] }}</td>
+                        {% if peut_gerer %}
+                        <td><button type="submit" form="annul-{{ l.cotisation.id }}" class="btn btn-sm btn-danger">Annuler</button></td>
+                        {% endif %}
+                        {% else %}
+                        <td>
+                            {% if seance.passee %}<span class="badge alerte">Non payé</span>
+                            {% else %}<span class="badge neutre">Pas encore payé</span>{% endif %}
+                        </td>
+                        {% if peut_gerer %}
+                        <td>
+                            <input class="case" type="checkbox" name="membre" value="{{ l.membre.id }}" id="chk-{{ l.membre.id }}">
+                            <label class="cache" for="chk-{{ l.membre.id }}">{{ l.membre.nom }} a cotisé</label>
+                        </td>
+                        <td>
+                            <label class="cache" for="mode-{{ l.membre.id }}">Mode de paiement de {{ l.membre.nom }}</label>
+                            <select id="mode-{{ l.membre.id }}" name="mode_{{ l.membre.id }}">
+                                {% for cle, libelle in MODES.items() %}<option value="{{ cle }}">{{ libelle }}</option>{% endfor %}
+                            </select>
+                        </td>
+                        <td>—</td>
+                        {% else %}
+                        <td>—</td>
+                        {% endif %}
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% if peut_gerer %}
+        <p><button type="submit" class="btn">Enregistrer les cotisations cochées</button></p>
+    </form>
+
+    {% for l in lignes if l.cotisation %}
+    <form id="annul-{{ l.cotisation.id }}" method="post" action="{{ url_for('annuler_cotisation', id_cotisation=l.cotisation.id) }}"
+          data-confirmer="Annuler la cotisation de {{ l.membre.nom }} ?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    </form>
+    {% endfor %}
+    {% endif %}
+</section>
+
+{% if peut_gerer and seance.passee and seance.nb_payes < seance.nb_attendus %}
+<section class="carte">
+    <h2>Pénaliser les retardataires</h2>
+    <p>Crée une pénalité de retard pour chaque membre qui n'a pas payé cette séance.</p>
+    <form method="post" action="{{ url_for('penaliser_retardataires', id_seance=seance.id) }}"
+          data-confirmer="Créer une pénalité pour tous les retardataires de cette séance ?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-ligne">
+            <div>
+                <label for="montant-pen">Montant (FCFA)</label>
+                <input id="montant-pen" name="montant" type="number" min="100" max="50000" step="100" value="500" required>
+            </div>
+            <div><button type="submit" class="btn btn-vert">Appliquer</button></div>
+        </div>
+    </form>
+</section>
+{% endif %}
+{% endblock %}

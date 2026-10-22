@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% from "macros.html" import avatar %}
+{% block titre %}Accueil : {{ association }}{% endblock %}
+
+{% block contenu %}
+{% set p = etat.prochaine %}
+<section class="hero">
+    <div class="hero-texte">
+        <p class="surtitre">Épargne solidaire · Transparence totale</p>
+        <h1>Votre tontine, claire comme l'eau de source</h1>
+        <p class="lead-clair">Cotisations, tours de rôle, pénalités : tout est enregistré,
+            calculé et consultable par chaque membre.</p>
+        <p class="actions">
+            <a class="btn" href="{{ url_for('calendrier') }}">Voir le calendrier</a>
+            <a class="btn btn-contour" href="{{ url_for('connexion') }}">Mon espace</a>
+             <a class="btn btn-contour" href="{{ url_for('rejoindre') }}">Rejoindre la tontine</a>
+        </p>
+    </div>
+
+    <aside class="carte-prochaine" id="prochaine-seance" aria-live="polite">
+        <p class="etiquette" id="ps-numero">{% if p %}Séance n° {{ p.numero }} sur {{ etat.seances|length }}{% else %}Cycle terminé{% endif %}</p>
+        <p class="gros" id="ps-date">{% if p %}{{ p.date|date_fr(true) }}{% else %}Bravo à tous !{% endif %}</p>
+        <p>Bénéficiaire : <strong id="ps-benef">{% if p %}{{ p.beneficiaire_nom or 'à désigner' }}{% else %}—{% endif %}</strong></p>
+        <p>Cagnotte attendue : <strong id="ps-cagnotte">{{ etat.attendu|fcfa }}</strong></p>
+        <div class="rebours" aria-label="Temps restant avant la séance">
+            <div><span id="cr-j">--</span><small>jours</small></div>
+            <div><span id="cr-h">--</span><small>heures</small></div>
+            <div><span id="cr-m">--</span><small>min</small></div>
+            <div><span id="cr-s">--</span><small>sec</small></div>
+        </div>
+    </aside>
+</section>
+
+<section class="kpis" aria-label="Chiffres clés">
+    <div class="kpi"><p class="etiquette">Membres</p><p class="valeur">{{ etat.nb_membres }}</p></div>
+    <div class="kpi or"><p class="etiquette">Cotisation par séance</p><p class="valeur">{{ etat.montant|fcfa }}</p></div>
+    <div class="kpi"><p class="etiquette">Cagnotte à chaque séance</p><p class="valeur">{{ etat.attendu|fcfa }}</p></div>
+    <div class="kpi"><p class="etiquette">Avancement du cycle</p><p class="valeur">{{ etat.kpi.progression }} %</p>
+        <p class="petit">{{ etat.kpi.seances_passees }} séances sur {{ etat.kpi.seances_total }}</p></div>
+</section>
+
+<section class="carte">
+    <h2>Comment ça marche ?</h2>
+    <ol class="etapes">
+        <li><strong>On cotise</strong><span>Chaque membre verse le même montant à chaque séance.</span></li>
+        <li><strong>On reçoit à son tour</strong><span>À chaque séance, un membre différent reçoit toute la cagnotte.</span></li>
+        <li><strong>On suit tout en ligne</strong><span>Cotisations, retards et pénalités sont visibles dans votre espace.</span></li>
+    </ol>
+</section>
+
+<section>
+    <h2>Les prochaines séances</h2>
+    <div class="cartes-seances">
+        {% for s in (etat.seances|rejectattr('passee')|list)[:3] %}
+        <article class="seance-carte">
+            <p class="seance-date">Séance n° {{ s.numero }} · {{ s.date|date_fr(true) }}</p>
+            {% if s.beneficiaire_nom %}
+            <p class="beneficiaire">{{ avatar(s.beneficiaire_nom) }} <span>{{ s.beneficiaire_nom }}</span></p>
+            {% else %}
+            <p class="beneficiaire a-designer">Bénéficiaire pas encore désigné</p>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

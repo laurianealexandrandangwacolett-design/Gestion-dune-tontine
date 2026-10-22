@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titre %}Erreur {{ code }} : {{ association }}{% endblock %}
+
+{% block contenu %}
+<section class="page-erreur">
+    <p class="code-erreur">{{ code }}</p>
+    <h1>{{ titre }}</h1>
+    <p>{{ message }}</p>
+    <p><a class="btn" href="{{ url_for('accueil') }}">Retour à l'accueil</a></p>
+</section>
+{% endblock %}

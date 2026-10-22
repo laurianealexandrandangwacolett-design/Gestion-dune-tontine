@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block titre %}Pénalités : {{ association }}{% endblock %}
+
+{% block contenu %}
+{% include "admin/_nav.html" %}
+<h1>Pénalités</h1>
+
+<section class="kpis trois" aria-label="Résumé des pénalités">
+    <div class="kpi"><p class="etiquette">Total</p><p class="valeur">{{ etat.kpi.pen_total|fcfa }}</p></div>
+    <div class="kpi"><p class="etiquette">Payées</p><p class="valeur">{{ (etat.kpi.pen_total - etat.kpi.pen_impayees)|fcfa }}</p></div>
+    <div class="kpi {% if etat.kpi.pen_impayees > 0 %}alerte{% endif %}"><p class="etiquette">Impayées</p><p class="valeur">{{ etat.kpi.pen_impayees|fcfa }}</p></div>
+</section>
+
+{% if peut_gerer %}
+<section class="carte">
+    <h2>Enregistrer une pénalité</h2>
+    <form method="post" id="form-penalite">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-ligne">
+            <div>
+                <label for="membre_id">Membre</label>
+                <select id="membre_id" name="membre_id" required>
+                    <option value="">Choisir…</option>
+                    {% for m in etat.membres %}<option value="{{ m.id }}">{{ m.nom }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="seance_id">Séance</label>
+                <select id="seance_id" name="seance_id" required>
+                    {% for s in etat.seances if s.passee %}
+                    <option value="{{ s.id }}" {% if loop.last %}selected{% endif %}>n° {{ s.numero }} ({{ s.date|date_fr }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="motif">Motif</label>
+                <select id="motif" name="motif">
+                    {% for cle, libelle in MOTIFS.items() %}<option value="{{ cle }}">{{ libelle }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="montant">Montant (FCFA)</label>
+                <input id="montant" name="montant" type="number" min="100" max="50000" step="100" value="500" required>
+            </div>
+        </div>
+        <p id="erreur" class="erreur-form" role="alert"></p>
+        <button type="submit" class="btn">Enregistrer</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="carte">
+    <h2>Toutes les pénalités ({{ etat.penalites|length }})</h2>
+    <label class="cache" for="recherche-pen">Rechercher un membre</label>
+    <input id="recherche-pen" type="search" placeholder="Rechercher un membre…" data-filtre="#table-pen">
+    <div class="table-wrap">
+        <table id="table-pen">
+            <thead><tr><th>Séance</th><th>Membre</th><th>Motif</th><th>Montant</th><th>État</th>{% if peut_gerer %}<th>Actions</th>{% endif %}</tr></thead>
+            <tbody>
+                {% for p in etat.penalites %}
+                <tr>
+                    <td>n° {{ p.numero }}</td>
+                    <td>{{ p.membre_nom }}</td>
+                    <td>{{ MOTIFS[p.motif] }}</td>
+                    <td>{{ p.montant|fcfa }}</td>
+                    <td>{% if p.payee %}<span class="badge ok">Payée</span>{% else %}<span class="badge alerte">À payer</span>{% endif %}</td>
+                    {% if peut_gerer %}
+                    <td>
+                        <form method="post" action="{{ url_for('payer_penalite', id_pen=p.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-vert">{{ 'Marquer non payée' if p.payee else 'Marquer payée' }}</button>
+                        </form>
+                        <form method="post" action="{{ url_for('supprimer_penalite', id_pen=p.id) }}" data-confirmer="Supprimer cette pénalité ?">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

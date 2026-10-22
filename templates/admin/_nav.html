@@ -1,0 +1,8 @@
+<div class="onglets" role="navigation" aria-label="Administration">
+    <a href="{{ url_for('tableau_bord') }}" {% if request.endpoint == 'tableau_bord' %}aria-current="page"{% endif %}>Tableau de bord</a>
+    <a href="{{ url_for('admin_seances') }}" {% if request.endpoint in ('admin_seances', 'cotisations_seance') %}aria-current="page"{% endif %}>Séances</a>
+    <a href="{{ url_for('admin_penalites') }}" {% if request.endpoint == 'admin_penalites' %}aria-current="page"{% endif %}>Pénalités</a>
+    <a href="{{ url_for('admin_membres') }}" {% if request.endpoint == 'admin_membres' %}aria-current="page"{% endif %}>Membres</a>
+    <a href="{{ url_for('admin_demandes') }}" {% if request.endpoint == 'admin_demandes' %}aria-current="page"{% endif %}>Demandes{% if nb_demandes %}<span class="pastille-nb">{{ nb_demandes }}</span>{% endif %}</a>
+    <a href="{{ url_for('historique') }}" {% if request.endpoint == 'historique' %}aria-current="page"{% endif %}>Historique</a>
+</div>

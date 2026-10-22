@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "macros.html" import avatar %}
+{% block titre %}Membres : {{ association }}{% endblock %}
+
+{% block contenu %}
+{% include "admin/_nav.html" %}
+<h1>Membres ({{ etat.nb_membres }})</h1>
+
+{% if peut_gerer %}
+<section class="carte">
+    <h2>Ajouter un membre</h2>
+    <form method="post" id="form-membre" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-ligne">
+            <div><label for="nom">Nom complet</label><input id="nom" name="nom" type="text" required></div>
+            <div><label for="telephone">Téléphone</label><input id="telephone" name="telephone" type="tel" placeholder="6XXXXXXXX" required></div>
+            <div>
+                <label for="role">Rôle</label>
+                <select id="role" name="role">
+                    {% for cle, libelle in ROLES.items() %}<option value="{{ cle }}">{{ libelle }}</option>{% endfor %}
+                </select>
+            </div>
+            <div><label for="code">Code d'accès provisoire</label><input id="code" name="code" type="text" minlength="6" required></div>
+        </div>
+        <p id="erreur" class="erreur-form" role="alert"></p>
+        <button type="submit" class="btn">Ajouter le membre</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="carte">
+    <label class="cache" for="recherche-membre">Rechercher un membre</label>
+    <input id="recherche-membre" type="search" placeholder="Rechercher un membre…" data-filtre="#table-membres">
+    <div class="table-wrap">
+        <table id="table-membres">
+            <thead>
+                <tr>
+                    <th>Membre</th><th>Téléphone</th><th>Rôle</th><th>Son tour</th>
+                    <th>Séances manquées</th><th>Dû</th><th>Ponctualité</th><th>Pénalités impayées</th>
+                    {% if peut_gerer %}<th>Action</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in etat.membres %}
+                <tr>
+                    <td>{{ avatar(m.nom) }} {{ m.nom }}</td>
+                    <td>{{ m.telephone }}</td>
+                    <td>{{ ROLES[m.role] }}</td>
+                    <td>{% if m.seance_benefice %}{{ m.seance_benefice.date|date_fr }} (n° {{ m.seance_benefice.numero }}){% else %}—{% endif %}</td>
+                    <td>{{ m.manquantes|length }}</td>
+                    <td>{% if m.du > 0 %}<span class="badge alerte">{{ m.du|fcfa }}</span>{% else %}<span class="badge ok">À jour</span>{% endif %}</td>
+                    <td>{{ m.ponctualite }} %</td>
+                    <td>{{ m.pen_impayees|fcfa }}</td>
+                    {% if peut_gerer %}
+                    <td>
+                        {% if m.role == 'membre' %}
+                        <form method="post" action="{{ url_for('retirer_membre', id_membre=m.id) }}"
+                              data-confirmer="Retirer {{ m.nom }} de la tontine ? Son historique de paiements est conservé.">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Retirer</button>
+                        </form>
+                        {% else %}—{% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titre %}Historique : {{ association }}{% endblock %}
+
+{% block contenu %}
+{% include "admin/_nav.html" %}
+<h1>Historique du cycle</h1>
+<p class="lead">{{ association }} · {{ etat.cycle.nom }} · édité le {{ aujourdhui|date_fr }}</p>
+<p><button type="button" class="btn" data-imprimer>Imprimer pour l'assemblée générale</button></p>
+
+<section class="carte">
+    <h2>Séances et bénéficiaires</h2>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>N°</th><th>Date</th><th>Bénéficiaire</th><th>Collecté</th><th>Attendu</th></tr></thead>
+            <tbody>
+                {% for s in etat.seances %}
+                <tr><td>{{ s.numero }}</td><td>{{ s.date|date_fr }}</td><td>{{ s.beneficiaire_nom or '—' }}</td>
+                    <td>{{ s.collecte|fcfa }}</td><td>{{ s.attendu|fcfa }}</td></tr>
+                {% endfor %}
+            </tbody>
+            <tfoot><tr><th colspan="3">Total collecté</th><th colspan="2">{{ etat.kpi.collecte_total|fcfa }}</th></tr></tfoot>
+        </table>
+    </div>
+</section>
+
+<section class="carte">
+    <h2>Situation des membres</h2>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Membre</th><th>Dû</th><th>Ponctualité</th><th>Pénalités impayées</th></tr></thead>
+            <tbody>
+                {% for m in etat.membres %}
+                <tr><td>{{ m.nom }}</td><td>{{ m.du|fcfa }}</td><td>{{ m.ponctualite }} %</td><td>{{ m.pen_impayees|fcfa }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

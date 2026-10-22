@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block titre %}Demandes d'adhésion : {{ association }}{% endblock %}
+
+{% block contenu %}
+{% include "admin/_nav.html" %}
+<h1>Demandes d'adhésion</h1>
+<p class="lead">Les visiteurs demandent à rejoindre depuis la page publique. Vous décidez :
+    à l'acceptation, le compte est créé et vous transmettez au candidat son numéro et
+    son code provisoire.</p>
+
+<section class="carte">
+    <h2>En attente ({{ en_attente|length }})</h2>
+    {% if en_attente %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Nom</th><th>Téléphone</th><th>Message</th>{% if peut_gerer %}<th>Décision</th>{% endif %}</tr>
+            </thead>
+            <tbody>
+                {% for d in en_attente %}
+                <tr>
+                    <td>{{ d.date_demande|date_fr }}</td>
+                    <td>{{ d.nom }}</td>
+                    <td>{{ d.telephone }}</td>
+                    <td class="msg">{{ d.message or '—' }}</td>
+                    {% if peut_gerer %}
+                    <td>
+                        <form method="post" action="{{ url_for('accepter_demande', id_demande=d.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <label class="cache" for="code-{{ d.id }}">Code provisoire pour {{ d.nom }}</label>
+                            <input id="code-{{ d.id }}" name="code" type="text" minlength="6" placeholder="Code provisoire" required>
+                            <button type="submit" class="btn btn-sm btn-vert">Accepter</button>
+                        </form>
+                        <form method="post" action="{{ url_for('refuser_demande', id_demande=d.id) }}"
+                              data-confirmer="Refuser la demande de {{ d.nom }} ?">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Refuser</button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>Aucune demande en attente.</p>
+    {% endif %}
+</section>
+
+<section class="carte">
+    <h2>Demandes déjà traitées</h2>
+    {% if traitees %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Date</th><th>Nom</th><th>Téléphone</th><th>Décision</th></tr></thead>
+            <tbody>
+                {% for d in traitees %}
+                <tr>
+                    <td>{{ d.date_demande|date_fr }}</td>
+                    <td>{{ d.nom }}</td>
+                    <td>{{ d.telephone }}</td>
+                    <td>{% if d.statut == 'acceptee' %}<span class="badge ok">Acceptée</span>{% else %}<span class="badge alerte">Refusée</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>Aucune demande traitée pour le moment.</p>
+    {% endif %}
+</section>
+{% endblock %}

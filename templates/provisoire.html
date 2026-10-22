@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} : {{ association }}{% endblock %}
+
+{% block contenu %}
+<h1>{{ titre }}</h1>
+<p>Connecté en tant que <strong>{{ utilisateur.nom }}</strong> (rôle : {{ utilisateur.role }}).</p>
+<p>Cette page sera construite aux prochaines phases.</p>
+{% endblock %}

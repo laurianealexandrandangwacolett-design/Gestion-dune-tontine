@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "macros.html" import avatar %}
+{% block titre %}Mon espace : {{ association }}{% endblock %}
+
+{% block contenu %}
+<section class="profil">
+    {{ avatar(moi.nom, "grand") }}
+    <div>
+        <h1>{{ moi.nom }}</h1>
+        <p><span class="badge neutre">{{ ROLES[moi.role] }}</span>
+           Membre depuis le {{ moi.date_adhesion|date_fr }}</p>
+    </div>
+    <div class="bloc-anneau">
+        <div class="anneau" style="--p: {{ moi.ponctualite }}" role="img"
+             aria-label="Ponctualité : {{ moi.ponctualite }} pour cent">
+            <span>{{ moi.ponctualite }} %</span>
+        </div>
+        <p class="valeur">{{ moi.payees_passees }} / {{ moi.nb_dues }}</p>
+    </div>
+</section>
+
+<section class="kpis" aria-label="Mes chiffres">
+    <div class="kpi">
+        <p class="etiquette">Cotisations payées</p>
+        <p class="valeur">{{ moi.payees_passees }} / {{ etat.kpi.seances_passees }}</p>
+    </div>
+    <div class="kpi {% if moi.du > 0 %}alerte{% endif %}">
+        <p class="etiquette">Montant dû</p>
+        <p class="valeur">{{ moi.du|fcfa }}</p>
+    </div>
+    <div class="kpi {% if moi.pen_impayees > 0 %}alerte{% endif %}">
+        <p class="etiquette">Pénalités impayées</p>
+        <p class="valeur">{{ moi.pen_impayees|fcfa }}</p>
+    </div>
+    <div class="kpi or">
+        <p class="etiquette">Mon tour</p>
+        {% if moi.seance_benefice %}
+        <p class="valeur">{{ moi.seance_benefice.date|date_fr }}</p>
+        <p class="petit">Séance n° {{ moi.seance_benefice.numero }} : {{ etat.attendu|fcfa }}</p>
+        {% else %}
+        <p class="valeur">À désigner</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="carte">
+    <h2>Mes cotisations</h2>
+    <div class="table-wrap">
+        <table>
+            <caption>Une ligne par séance du cycle</caption>
+            <thead>
+                <tr><th>Séance</th><th>Date</th><th>État</th><th>Paiement</th></tr>
+            </thead>
+            <tbody>
+                {% for l in lignes %}
+                <tr>
+                    <td>n° {{ l.seance.numero }}</td>
+                    <td>{{ l.seance.date|date_fr }}</td>
+                    <td>
+                        {% if l.etat == 'ponctuel' %}<span class="badge ok">Payée à l'heure</span>
+                        {% elif l.etat == 'tardif' %}<span class="badge or">Payée en retard</span>
+                        {% elif l.etat == 'retard' %}<span class="badge alerte">Non payée</span>
+                        {% else %}<span class="badge neutre">À venir</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if l.cotisation %}
+                            {{ l.cotisation.montant|fcfa }}, le {{ l.cotisation.date_paiement|date_fr }}
+                            ({{ MODES[l.cotisation.mode] }})
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="carte">
+    <h2>Mes pénalités</h2>
+    {% if mes_pens %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Séance</th><th>Motif</th><th>Montant</th><th>État</th></tr></thead>
+            <tbody>
+                {% for p in mes_pens %}
+                <tr>
+                    <td>n° {{ p.numero }}</td>
+                    <td>{{ MOTIFS[p.motif] }}</td>
+                    <td>{{ p.montant|fcfa }}</td>
+                    <td>{% if p.payee %}<span class="badge ok">Payée</span>
+                        {% else %}<span class="badge alerte">À payer</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>Aucune pénalité : bravo pour votre sérieux !</p>
+    {% endif %}
+</section>
+
+<details class="carte">
+    <summary>Changer mon code d'accès</summary>
+    <form method="post" action="{{ url_for('changer_code') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="ancien">Code actuel</label>
+        <input id="ancien" name="ancien" type="password" autocomplete="current-password" required>
+        <label for="nouveau">Nouveau code (6 caractères minimum)</label>
+        <input id="nouveau" name="nouveau" type="password" minlength="6" autocomplete="new-password" required>
+        <label for="confirmation">Confirmer le nouveau code</label>
+        <input id="confirmation" name="confirmation" type="password" minlength="6" autocomplete="new-password" required>
+        <p><button type="submit" class="btn">Enregistrer</button></p>
+    </form>
+</details>
+{% endblock %}

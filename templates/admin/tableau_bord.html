@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord : {{ association }}{% endblock %}
+
+{% block contenu %}
+{% include "admin/_nav.html" %}
+<h1>Tableau de bord</h1>
+<p class="lead">{{ etat.cycle.nom }} · cotisation de {{ etat.montant|fcfa }} par séance · {{ etat.nb_membres }} membres.</p>
+
+<section class="kpis trois" aria-label="Chiffres clés">
+    <div class="kpi">
+        <p class="etiquette">Total collecté</p>
+        <p class="valeur">{{ etat.kpi.collecte_total|fcfa }}</p>
+    </div>
+    <div class="kpi">
+        <p class="etiquette">Recouvrement (séances passées)</p>
+        <p class="valeur">{{ etat.kpi.recouvrement }} %</p>
+        <div class="barre" role="img" aria-label="{{ etat.kpi.recouvrement }} pour cent"><span style="width: {{ etat.kpi.recouvrement }}%"></span></div>
+    </div>
+    <div class="kpi {% if etat.kpi.total_du > 0 %}alerte{% endif %}">
+        <p class="etiquette">Total dû par les retardataires</p>
+        <p class="valeur">{{ etat.kpi.total_du|fcfa }}</p>
+        <p class="petit">{{ etat.kpi.nb_retardataires }} membre(s) en retard</p>
+    </div>
+    <div class="kpi {% if etat.kpi.pen_impayees > 0 %}alerte{% endif %}">
+        <p class="etiquette">Pénalités impayées</p>
+        <p class="valeur">{{ etat.kpi.pen_impayees|fcfa }}</p>
+        <p class="petit">sur {{ etat.kpi.pen_total|fcfa }} de pénalités</p>
+    </div>
+    <div class="kpi">
+        <p class="etiquette">Avancement du cycle</p>
+        <p class="valeur">{{ etat.kpi.progression }} %</p>
+        <p class="petit">{{ etat.kpi.seances_passees }} séances passées sur {{ etat.kpi.seances_total }}</p>
+    </div>
+    <div class="kpi or">
+        <p class="etiquette">Prochaine séance</p>
+        {% if etat.prochaine %}
+        <p class="valeur">n° {{ etat.prochaine.numero }}, {{ etat.prochaine.date|date_fr }}</p>
+        <p class="petit">Bénéficiaire : {{ etat.prochaine.beneficiaire_nom or 'à désigner' }}</p>
+        {% else %}
+        <p class="valeur">Cycle terminé</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="carte">
+    <h2>1. Montant collecté par séance</h2>
+    <div id="graph-seances" class="graphique"></div>
+    <div class="table-wrap">
+        <table>
+            <caption>Collecté comparé au montant attendu ({{ etat.attendu|fcfa }} par séance)</caption>
+            <thead><tr><th>Séance</th><th>Date</th><th>Bénéficiaire</th><th>Collecté</th><th>Avancement</th></tr></thead>
+            <tbody>
+                {% for s in etat.seances %}
+                <tr>
+                    <td><a href="{{ url_for('cotisations_seance', id_seance=s.id) }}">n° {{ s.numero }}</a></td>
+                    <td>{{ s.date|date_fr }}</td>
+                    <td>{{ s.beneficiaire_nom or '—' }}</td>
+                    <td>{{ s.collecte|fcfa }}</td>
+                    <td><div class="barre" role="img" aria-label="{{ s.taux }} pour cent"><span style="width: {{ s.taux }}%"></span></div></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="grille-2">
+    <section class="carte">
+        <h2>2. Membres en retard</h2>
+        {% if etat.retardataires %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Membre</th><th>Séances manquées</th><th>Montant dû</th></tr></thead>
+                <tbody>
+                    {% for r in etat.retardataires %}
+                    <tr>
+                        <td>{{ r.nom }}</td>
+                        <td>{{ r.manquantes|join(', ') }}</td>
+                        <td><strong>{{ r.du|fcfa }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>Aucun retard : tous les membres sont à jour.</p>
+        {% endif %}
+    </section>
+
+    <section class="carte">
+        <h2>3. Pénalités par membre</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Membre</th><th>Nombre</th><th>Total</th><th>Impayées</th></tr></thead>
+                <tbody>
+                    {% for m in etat.membres|sort(attribute='pen_total', reverse=true) if m.pen_total > 0 %}
+                    <tr>
+                        <td>{{ m.nom }}</td><td>{{ m.nb_pen }}</td>
+                        <td>{{ m.pen_total|fcfa }}</td>
+                        <td>{% if m.pen_impayees > 0 %}<span class="badge alerte">{{ m.pen_impayees|fcfa }}</span>{% else %}<span class="badge ok">0</span>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<section class="carte">
+    <h2>4. Taux de ponctualité de chaque membre</h2>
+    <div id="graph-ponctualite" class="graphique"></div>
+    <div class="table-wrap">
+        <table>
+            <caption>Cotisations payées au plus tard le jour de la séance, sur les séances passées</caption>
+            <thead><tr><th>Membre</th><th>Ponctualité</th></tr></thead>
+            <tbody>
+                {% for m in etat.membres|sort(attribute='ponctualite') %}
+                <tr>
+                    <td>{{ m.nom }}</td>
+                    <td><div class="barre" role="img" aria-label="{{ m.ponctualite }} pour cent"><span style="width: {{ m.ponctualite }}%"></span></div>
+                        <span class="petit">{{ m.ponctualite }} %</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

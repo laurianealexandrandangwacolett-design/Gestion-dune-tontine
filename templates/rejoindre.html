@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titre %}Demander à rejoindre : {{ association }}{% endblock %}
+
+{% block contenu %}
+<section class="carte-connexion">
+    <h1>Demander à rejoindre</h1>
+    <p>Remplissez ce formulaire pour <strong>le prochain cycle</strong>. Le trésorier examine
+        chaque demande et vous contacte au numéro indiqué. Votre demande ne vous donne pas
+        encore accès au site.</p>
+
+    <form method="post" id="form-adhesion" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label for="nom">Nom complet</label>
+        <input id="nom" name="nom" type="text" maxlength="80" value="{{ donnees.get('nom', '') }}"
+               autocomplete="name" required>
+
+        <label for="telephone">Téléphone</label>
+        <input id="telephone" name="telephone" type="tel" placeholder="6XXXXXXXX"
+               value="{{ donnees.get('telephone', '') }}" autocomplete="tel" required>
+
+        <label for="message">Message (facultatif)</label>
+        <textarea id="message" name="message" maxlength="300" rows="4"
+                  placeholder="Qui vous recommande ? Pourquoi souhaitez-vous rejoindre la tontine ?">{{ donnees.get('message', '') }}</textarea>
+        <p class="compteur" id="compteur-message" aria-live="polite">0 / 300</p>
+
+        <p id="erreur" class="erreur-form" role="alert"></p>
+        <button type="submit" class="btn">Envoyer ma demande</button>
+    </form>
+</section>
+{% endblock %}

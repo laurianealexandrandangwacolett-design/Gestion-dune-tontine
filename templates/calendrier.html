@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "macros.html" import avatar %}
+{% block titre %}Calendrier : {{ association }}{% endblock %}
+
+{% block contenu %}
+<h1>Calendrier des séances</h1>
+<p class="lead">À chaque séance, un membre reçoit la cagnotte. Chacun cotise {{ etat.montant|fcfa }},
+    donc la cagnotte attendue est de <strong>{{ etat.attendu|fcfa }}</strong>.</p>
+
+<div class="resume-cycle">
+    <div class="anneau" style="--p: {{ etat.kpi.progression }}" role="img"
+         aria-label="Cycle terminé à {{ etat.kpi.progression }} pour cent">
+        <span>{{ etat.kpi.progression }} %</span>
+    </div>
+    <p><strong>{{ etat.kpi.seances_passees }}</strong> séances passées sur {{ etat.kpi.seances_total }}<br>
+       <span class="petit">{{ etat.cycle.nom }}, séances {{ etat.cycle.periodicite }}s</span></p>
+</div>
+
+<ol class="chrono">
+    {% for s in etat.seances %}
+    <li class="seance {{ s.statut }}">
+        <span class="pastille">{{ s.numero }}</span>
+        <div class="seance-carte">
+            <p class="seance-date">
+                {{ s.date|date_fr(true) }}
+                {% if s.statut == 'prochaine' %}<span class="badge or">Prochaine séance</span>
+                {% elif s.passee %}<span class="badge ok">Terminée</span>{% endif %}
+            </p>
+
+            {% if s.beneficiaire_nom %}
+            <p class="beneficiaire">{{ avatar(s.beneficiaire_nom) }}
+                <span>Bénéficiaire : <strong>{{ s.beneficiaire_nom }}</strong></span></p>
+            {% else %}
+            <p class="beneficiaire a-designer">Bénéficiaire pas encore désigné</p>
+            {% endif %}
+
+            <div class="barre" role="img" aria-label="{{ s.taux }} pour cent collectés"><span style="width: {{ s.taux }}%"></span></div>
+            <p class="petit">{{ s.collecte|fcfa }} collectés sur {{ s.attendu|fcfa }}
+                ({{ s.nb_payes }} / {{ s.nb_attendus }} cotisations)</p>
+        </div>
+    </li>
+    {% endfor %}
+</ol>
+{% endblock %}
